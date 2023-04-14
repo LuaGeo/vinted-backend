@@ -23,7 +23,7 @@ app.use(userRoutes);
 app.use(offerRoutes);
 
 app.get("/", (req, res) => {
-  res.json("COuCOu! C'est mon premier serveur !");
+  res.json({ message: "COuCOu! C'est mon premier serveur !" });
 });
 
 app.all("*", (req, res) => {
