@@ -58,28 +58,40 @@ router.get("/offers", async (req, res) => {
   try {
     const { title, priceMin, priceMax, sort, page } = req.query;
     // console.log(title, priceMin, priceMax, sort, page);
-    let chosenSort = {};
+    const filter = {};
+    if (title) {
+      filter.product_name = new RegExp(title, "i");
+    }
+    if (priceMin) {
+      filter.product_price = { $gte: priceMin };
+    }
+    if (priceMax) {
+      if (filter.product_price) {
+        filter.product_price.$lte = priceMax;
+      } else {
+        filter.product_price = { $lte: priceMax };
+      }
+    }
+    const chosenSort = {};
     if (sort === "price-desc") {
       chosenSort.product_price = -1;
     } else if (sort === "price-asc") {
       chosenSort.product_price = 1;
     }
+    const limit = 2;
     let chosenPage = 1;
     if (page > 1) {
       chosenPage = page;
     }
-    const offers = await Offer.find({
-      product_name: new RegExp(title, "i"),
-      product_price: {
-        $gte: priceMin,
-        $lte: priceMax,
-      },
-    })
+    const offers = await Offer.find(filter)
       .sort(chosenSort)
-      .skip(chosenPage * 2 - 2)
-      .limit(2);
+      .skip(chosenPage * limit - limit)
+      .limit(limit)
+      .populate("owner", "account");
 
-    res.json(offers);
+    const count = await Offer.countDocuments(filter);
+
+    res.json({ count: count, offers: offers });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
